@@ -16,6 +16,12 @@ var (
 		Help:      "Total reqests made to AWS",
 	}, []string{"result"})
 
+	awsReqAttemptCount = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "awscsm",
+		Name:      "req_attempt_count",
+		Help:      "Total reqest attempts made to AWS",
+	}, []string{"result"})
+
 	awsThrottleCount = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "awscsm",
 		Name:      "throttle_count",
@@ -34,6 +40,7 @@ func registerPrometheusMetrics() {
 	prometheus.MustRegister(awsReqCount)
 	prometheus.MustRegister(awsThrottleCount)
 	prometheus.MustRegister(awsReqLatency)
+	prometheus.MustRegister(awsReqAttemptCount)
 	logrus.Infof("Finished registering metrics")
 }
 
@@ -63,9 +70,9 @@ func recordMetric(metricData *AWSMetricsData) {
 		break
 	case "ApiCallAttempt":
 		if checkSuccessCode(metricData.HTTPStatusCode) {
-			awsReqCount.WithLabelValues("success").Add(1)
+			awsReqAttemptCount.WithLabelValues("success").Add(1)
 		} else {
-			awsReqCount.WithLabelValues("error").Add(1)
+			awsReqAttemptCount.WithLabelValues("error").Add(1)
 		}
 		logrus.Infof("%f", float64(metricData.AttemptLatency))
 		awsReqLatency.WithLabelValues(metricData.Service).Observe(float64(metricData.AttemptLatency))
